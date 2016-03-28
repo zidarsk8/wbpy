@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import tempfile
-import urllib2
+import urllib.request
 import time
 import logging
 import datetime
@@ -47,8 +47,8 @@ def fetch(url, check_cache=True, cache_response=True):
             secs_in_day = 86400
             if int(time.time()) - os.path.getmtime(cache_path) < secs_in_day:
                 logger.debug("Retrieving response from cache.")
-                response = open(cache_path, "rb").read().decode("utf-8")
-                return response
+                with open(cache_path, "rb") as cache_file:
+                  return cache_file.read().decode("utf-8")
             else:
                 logger.debug("Cache file has expired, removing...")
                 os.remove(cache_path)
@@ -56,7 +56,7 @@ def fetch(url, check_cache=True, cache_response=True):
             logger.debug("URL not found in cache....")
 
     logger.debug("Getting web response...")
-    response = urllib2.urlopen(url).read()
+    response = urllib.request.urlopen(url).read()
 
     # py3 returns bytestring
     if sys.version_info >= (3,):
