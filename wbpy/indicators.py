@@ -2,12 +2,9 @@ import re
 import datetime
 import pprint
 import urllib
-try:
-    import simplejson as json
-except ImportError:
-    import json
+import json
 
-from . import utils
+from wbpy import utils
 
 
 class IndicatorDataset(object):
@@ -30,7 +27,7 @@ class IndicatorDataset(object):
 
         # For some use cases, it's nice to have direct access to all the
         # `get_indicator()` metadata (eg. the sources, full description).
-        # It won't always be wanted, so it's requested lazily.
+        # It won't always be wanted, so it's requested lazily.
         self._indicator_response = None
 
     def __repr__(self):
@@ -41,7 +38,7 @@ class IndicatorDataset(object):
             self.indicator_code,
             self.indicator_name,
             id(self),
-            )
+        )
 
     def __str__(self):
         return pprint.pformat(self.as_dict())
@@ -136,7 +133,7 @@ class IndicatorAPI(object):
         self.fetch = fetch if fetch else utils.fetch
 
     def get_dataset(self, indicator, country_codes=None,
-            **kwargs):
+                    **kwargs):
         """Request a dataset from the API.
 
         :param indicator:
@@ -160,13 +157,13 @@ class IndicatorAPI(object):
         """
         if country_codes:
             country_codes = [utils.convert_country_code(c, "alpha3") for c in
-                country_codes]
+                             country_codes]
             country_string = ";".join(country_codes)
         else:
             country_string = "all"
 
         url = "countries/{0}/indicators/{1}?".format(country_string,
-                indicator)
+                                                     indicator)
         url = self._generate_indicators_url(url, dataset_params=True, **kwargs)
         call_date = datetime.datetime.now().date()
         json_resp = json.loads(self.fetch(url))
@@ -174,7 +171,7 @@ class IndicatorAPI(object):
         return IndicatorDataset(json_resp, url, call_date)
 
     def get_indicators(self, indicator_codes=None, search=None,
-            search_full=False, common_only=False, **kwargs):
+                       search_full=False, common_only=False, **kwargs):
         """Request metadata on specific World Bank indicators.
 
         :param indicator_codes:
@@ -207,10 +204,14 @@ class IndicatorAPI(object):
             "response_key": "id",
             "rest_url": "indicator",
             "search_key": "name",
-            }
-        results = self._get_indicator_data(func_params,
-            indicator_codes, search=search, search_full=search_full,
-            **kwargs)
+        }
+        results = self._get_indicator_data(
+            func_params,
+            indicator_codes,
+            search=search,
+            search_full=search_full,
+            **kwargs
+        )
 
         if common_only:
             # Compile a list of codes that are on the main website (and have
@@ -234,7 +235,7 @@ class IndicatorAPI(object):
             return results
 
     def get_countries(self, country_codes=None, search=None,
-            search_full=False, **kwargs):
+                      search_full=False, **kwargs):
         """Request country metadata.
 
         eg. ISO code, coordinates, capital, income level, etc.
@@ -263,17 +264,18 @@ class IndicatorAPI(object):
             "response_key": "iso2Code",
             "rest_url": "country",
             "search_key": "name",
-            }
+        }
         if country_codes:
             country_codes = [utils.convert_country_code(c, "alpha3") for c in
-                country_codes]
+                             country_codes]
 
-        return self._get_indicator_data(func_params,
+        return self._get_indicator_data(
+            func_params,
             country_codes, search=search, search_full=search_full,
             **kwargs)
 
     def get_income_levels(self, income_codes=None, search=None,
-            search_full=False, **kwargs):
+                          search_full=False, **kwargs):
         """Request income categories.
 
         :param income_codes:
@@ -297,13 +299,14 @@ class IndicatorAPI(object):
             "response_key": "id",
             "rest_url": "incomelevel",
             "search_key": "value",
-            }
-        return self._get_indicator_data(func_params,
+        }
+        return self._get_indicator_data(
+            func_params,
             income_codes, search=search, search_full=search_full,
             **kwargs)
 
     def get_lending_types(self, lending_codes=None, search=None,
-            search_full=False, **kwargs):
+                          search_full=False, **kwargs):
         """Request lending type categories.
 
         :param lending_codes:
@@ -328,13 +331,17 @@ class IndicatorAPI(object):
             "response_key": "id",
             "rest_url": "lendingtype",
             "search_key": "value",
-            }
-        return self._get_indicator_data(func_params,
-            lending_codes, search=search, search_full=search_full,
-            **kwargs)
+        }
+        return self._get_indicator_data(
+            func_params,
+            lending_codes,
+            search=search,
+            search_full=search_full,
+            **kwargs
+        )
 
     def get_regions(self, region_codes=None, search=None, search_full=False,
-            **kwargs):
+                    **kwargs):
         """Request region names and codes.
 
         :param region_codes:
@@ -358,13 +365,17 @@ class IndicatorAPI(object):
             "response_key": "code",
             "rest_url": "region",
             "search_key": "name",
-            }
-        return self._get_indicator_data(func_params,
-            region_codes, search=search, search_full=search_full,
-            **kwargs)
+        }
+        return self._get_indicator_data(
+            func_params,
+            region_codes,
+            search=search,
+            search_full=search_full,
+            **kwargs
+        )
 
     def get_topics(self, topic_codes=None, search=None,
-            search_full=False, **kwargs):
+                   search_full=False, **kwargs):
         """Request API topics.
 
         All indicators are mapped to a topic, eg. Health, Private Sector. You
@@ -391,13 +402,14 @@ class IndicatorAPI(object):
             "response_key": "id",
             "rest_url": "topic",
             "search_key": "value",
-            }
-        return self._get_indicator_data(func_params,
+        }
+        return self._get_indicator_data(
+            func_params,
             topic_codes, search=search, search_full=search_full,
             **kwargs)
 
     def get_sources(self, source_codes=None, search=None,
-            search_full=False, **kwargs):
+                    search_full=False, **kwargs):
         """Request API source info.
 
         :param source_codes:
@@ -421,8 +433,9 @@ class IndicatorAPI(object):
             "response_key": "id",
             "rest_url": "source",
             "search_key": "name",
-            }
-        return self._get_indicator_data(func_params,
+        }
+        return self._get_indicator_data(
+            func_params,
             source_codes, search=search, search_full=search_full,
             **kwargs)
 
@@ -499,12 +512,11 @@ class IndicatorAPI(object):
                     search_matches[k] = v
         return search_matches
 
-
     def _generate_indicators_url(
-        self,
-        rest_url,
-        dataset_params=False,
-        **kwargs):
+            self,
+            rest_url,
+            dataset_params=False,
+            **kwargs):
         """Add API root and query string options to an otherwise complete
         endpoint.
 
@@ -537,12 +549,12 @@ class IndicatorAPI(object):
         # Some options are part of the url structure.
         if "source" in kwargs:
             rest_url = "".join(["source/", str(kwargs["source"]), "/",
-                rest_url])
+                                rest_url])
             del(kwargs["source"])
 
         if "topic" in kwargs:
             rest_url = "".join(["topic/", str(kwargs["topic"]), "/",
-                rest_url])
+                                rest_url])
             del(kwargs["topic"])
 
         # Prepend language last, as it should be at front of url.
@@ -578,7 +590,7 @@ class IndicatorAPI(object):
         return content
 
     def _get_indicator_data(self, func_params, api_ids, search=None,
-            search_full=False, **kwargs):
+                            search_full=False, **kwargs):
         """
         :param func_params:
             Dict of variables to build this function:
@@ -624,7 +636,7 @@ class IndicatorAPI(object):
                 filtered_data = self.search_results(search, filtered_data)
             else:
                 filtered_data = self.search_results(search, filtered_data,
-                    func_params["search_key"])
+                                                    func_params["search_key"])
         return filtered_data
 
     def _raise_if_bad_response(self, json_resp, url):

@@ -21,9 +21,9 @@ EXC_MSG = "The URL %s returned a bad response: %s"
 #
 # The file contains the results of IndicatorAPI.get_countries(), with all the
 # ISO countries excluded.
-path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-    "non_ISO_region_codes.json")
-NON_STANDARD_REGIONS = json.loads(open(path).read())
+JSON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                         "non_ISO_region_codes.json")
+NON_STANDARD_REGIONS = json.loads(open(JSON_PATH).read())
 
 
 def fetch(url, check_cache=True, cache_response=True):
@@ -48,7 +48,7 @@ def fetch(url, check_cache=True, cache_response=True):
             if int(time.time()) - os.path.getmtime(cache_path) < secs_in_day:
                 logger.debug("Retrieving response from cache.")
                 with open(cache_path, "rb") as cache_file:
-                  return cache_file.read().decode("utf-8")
+                    return cache_file.read().decode("utf-8")
             else:
                 logger.debug("Cache file has expired, removing...")
                 os.remove(cache_path)

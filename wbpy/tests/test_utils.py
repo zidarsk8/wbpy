@@ -1,12 +1,6 @@
-# -*- coding: utf-8 -*-
 import sys
 import json
-try:
-    # py2.6
-    import unittest2 as unittest
-except ImportError:
-    # py2.7+
-    import unittest
+import unittest
 
 import mock
 

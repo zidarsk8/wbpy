@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import datetime
 import unittest
 
@@ -12,6 +11,7 @@ from wbpy.tests.climate_data import InstrumentalDecade
 from wbpy.tests.climate_data import ModelledVarMAVG
 from wbpy.tests.climate_data import ModelledVarAANOM
 from wbpy.tests.climate_data import ModelledStat
+
 
 @ddt
 class TestClimateDataBasicAttrs(unittest.TestCase):
@@ -65,7 +65,7 @@ class TestInstrumentalModelBasicAttrs(unittest.TestCase):
     def test_api_call_regions_decade(self):
         data = InstrumentalDecade()
         dataset_regions = [x["region"][0] for x in data.dataset.api_calls]
-        self.assertEqual(sorted(dataset_regions), ["300", "302"] )
+        self.assertEqual(sorted(dataset_regions), ["300", "302"])
 
     @data(InstrumentalMonth(), InstrumentalYear(), InstrumentalDecade())
     def test_api_call_date_attr(self, data):
@@ -118,6 +118,7 @@ class TestInstrumentalModelDictFn(unittest.TestCase):
         results = data.dataset.as_dict()
         self.assertEqual(results["300"]["1990"], 13.437422)
 
+
 @ddt
 class TestModelledModelBasicAttrs(unittest.TestCase):
 
@@ -137,6 +138,10 @@ class TestModelledModelBasicAttrs(unittest.TestCase):
 
 class TestModelledModelDatesFn(unittest.TestCase):
 
+    @classmethod
+    def dt(cls, year):
+        return datetime.date(year, 1, 1)
+
     def test_mavg(self):
         data = ModelledVarMAVG()
         expected = [("2020", "2039"), ("2040", "2059")]
@@ -144,8 +149,8 @@ class TestModelledModelDatesFn(unittest.TestCase):
 
     def test_mavg_datetime(self):
         data = ModelledVarMAVG()
-        dt = lambda x: datetime.date(x, 1, 1)
-        expected = [(dt(2020), dt(2039)), (dt(2040), dt(2059))]
+        expected = [(self.dt(2020), self.dt(2039)),
+                    (self.dt(2040), self.dt(2059))]
         self.assertEqual(data.dataset.dates(use_datetime=True), expected)
 
     def test_aanom(self):
@@ -155,8 +160,8 @@ class TestModelledModelDatesFn(unittest.TestCase):
 
     def test_aanom_datetime(self):
         data = ModelledVarAANOM()
-        dt = lambda x: datetime.date(x, 1, 1)
-        expected = [(dt(2020), dt(2039)), (dt(2060), dt(2079))]
+        expected = [(self.dt(2020), self.dt(2039)),
+                    (self.dt(2060), self.dt(2079))]
         self.assertEqual(data.dataset.dates(use_datetime=True), expected)
 
     def test_stat(self):
@@ -166,9 +171,9 @@ class TestModelledModelDatesFn(unittest.TestCase):
 
     def test_stat_datetime(self):
         data = ModelledStat()
-        dt = lambda x: datetime.date(x, 1, 1)
-        expected = [(dt(2046), dt(2065))]
+        expected = [(self.dt(2046), self.dt(2065))]
         self.assertEqual(data.dataset.dates(use_datetime=True), expected)
+
 
 @ddt
 class TestModelledModelDictFn(unittest.TestCase):
@@ -182,9 +187,9 @@ class TestModelledModelDictFn(unittest.TestCase):
         self.assertIn("ensemble_90", data.dataset.as_dict())
 
     @data([ModelledVarMAVG(), ("BR",)],
-        [ModelledVarAANOM(), ("JP",)],
-        [ModelledStat(), ("AU", "NZ")],
-        )
+          [ModelledVarAANOM(), ("JP",)],
+          [ModelledStat(), ("AU", "NZ")],
+          )
     def test_region_key(self, foo):
         data, expected_regions = foo
         for gcm_dict in data.dataset.as_dict().values():
@@ -227,10 +232,13 @@ class TestModelledModelDictFn(unittest.TestCase):
 
 
 class TestClimateAPI(unittest.TestCase):
+
     def setUp(self):
         self.api = wbpy.ClimateAPI()
 
+
 class TestInstumentalFn(TestClimateAPI):
+
     def test_precip_type(self):
         locs = ["US", "GB"]
         dataset = self.api.get_instrumental("pr", "year", locs)
@@ -253,8 +261,10 @@ class TestInstumentalFn(TestClimateAPI):
         self.assertIn("GB", regions)
         self.assertIn("302", regions)
 
+
 @ddt
 class TestModelledFn(TestClimateAPI):
+
     def test_precip_type(self):
         locs = ["US"]
         dataset = self.api.get_modelled("pr", "mavg", locs)
@@ -291,12 +301,12 @@ class TestModelledFn(TestClimateAPI):
         dataset = self.api.get_modelled("tmin_means", "mavg", locs)
         res = dataset.as_dict(sres="b1")
         self.assertEqual(res["ensemble_90"]["NZ"]["2065"][11],
-            14.541015999650355)
+                         14.541015999650355)
 
     def test_bad_request_raises_exc(self):
         def bad_req():
             locs = ["GB", "303"]
-            dataset = self.api.get_modelled("prr", "mavg", locs)
+            self.api.get_modelled("prr", "mavg", locs)
 
         self.assertRaises(AssertionError, bad_req)
 
@@ -309,6 +319,7 @@ class TestModelledFn(TestClimateAPI):
 
 
 class TestLocationCodes(TestClimateAPI):
+
     def test_alpha2_codes_work_as_location_arg(self):
         locs = ["GB"]
         dataset = self.api.get_modelled("tas", "aanom", locs)
@@ -319,10 +330,11 @@ class TestLocationCodes(TestClimateAPI):
         dataset = self.api.get_modelled("tas", "aanom", locs)
         self.assertTrue(dataset.as_dict())
 
+
 @ddt
 class TestHasMetadata(TestClimateAPI):
 
     @data("instrumental_types", "modelled_types", "instrumental_intervals",
-        "modelled_intervals")
+          "modelled_intervals")
     def test_metadata_attrs(self, attr_name):
         self.assertTrue(attr_name in self.api.ARG_DEFINITIONS)

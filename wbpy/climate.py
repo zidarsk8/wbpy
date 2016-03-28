@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 import datetime
 import pprint
@@ -7,7 +6,7 @@ import itertools
 
 import pycountry
 
-from . import utils
+from wbpy import utils
 
 
 class ClimateDataset(object):
@@ -52,7 +51,7 @@ class ClimateDataset(object):
             self.data_type,
             self.interval,
             id(self),
-            )
+        )
 
     def __str__(self):
         return pprint.pformat(self.as_dict())
@@ -89,7 +88,7 @@ class InstrumentalDataset(ClimateDataset):
         if self.interval == "month":
             for call in self.api_calls:
                 sorted_months = sorted(call["resp"],
-                    key=lambda row: float(row["month"]))
+                                       key=lambda row: float(row["month"]))
                 vals = [float(row["data"]) for row in sorted_months]
 
                 region_code = call["region"][0]
@@ -155,7 +154,7 @@ class ModelledDataset(ClimateDataset):
             dates.add((start, end))
         return sorted(list(dates))
 
-    def as_dict(self, sres="a2", use_datetime=False):
+    def as_dict(self, sres="a2", use_datetime=False):  # noqa
         """Return dataset data as dictionary.
 
         Keys are: data[gcm][location][date]
@@ -171,10 +170,8 @@ class ModelledDataset(ClimateDataset):
         results = {}
         for call in self.api_calls:
             if "ensemble" in call["url"]:
-                get_gcm_key = lambda row: "ensemble_%d" % row["percentile"]
                 annual_data_key = "annualVal"
             else:
-                get_gcm_key = lambda row: row["gcm"]
                 annual_data_key = "annualData"
 
             region_code = call["region"][0]
@@ -187,7 +184,11 @@ class ModelledDataset(ClimateDataset):
                 if row_scenario and row_scenario != sres.lower():
                     continue
 
-                gcm_key = get_gcm_key(row)
+                if annual_data_key == "annualVal":
+                    gcm_key = "ensemble_{}".format(row["percentile"])
+                else:
+                    gcm_key = row["gcm"]
+
                 if gcm_key not in results:
                     results[gcm_key] = {}
 
@@ -238,7 +239,7 @@ class ClimateAPI(object):
         ensemble_10="10th percentile values of all models together",
         ensemble_50="50th percentile values of all models together",
         ensemble_90="90th percentile values of all models together",
-        )
+    )
 
     _valid_modelled_dates = [
         (1920, 1939),
@@ -249,19 +250,19 @@ class ClimateAPI(object):
         (2040, 2059),
         (2060, 2079),
         (2080, 2099),
-        ]
+    ]
 
     _valid_stat_dates = [
         (1961, 2000),
         (2046, 2065),
         (2081, 2100),
-        ]
+    ]
 
     _instrumental_types = dict(
         pr="Precipitation (rainfall and assumed water equivalent), in "
         "millimeters",
         tas="Temperature, in degrees Celsius",
-        )
+    )
 
     _instrumental_intervals = ["year", "month", "decade"]
 
@@ -288,23 +289,23 @@ class ClimateAPI(object):
         ppt_means="Average daily precipitation",
         pr=_instrumental_types["pr"],
         tas=_instrumental_types["tas"],
-        )
+    )
 
     _modelled_intervals = dict(
         mavg="Monthly average",
         annualavg="Annual average",
         manom="Average monthly change (anomaly).",
         annualanom="Average annual change (anomaly).",
-        )
+    )
 
     # Convenience codes
     _shorthand_codes = dict(
         aanom="annualanom",
         aavg="annualavg",
-        )
+    )
     for _k, _d_key in _shorthand_codes.items():
         for _d in [_instrumental_types, _modelled_types,
-            _instrumental_intervals, _modelled_intervals]:
+                   _instrumental_intervals, _modelled_intervals]:
             if _d_key in _d:
                 _d[_k] = _d[_d_key]
 
@@ -314,7 +315,7 @@ class ClimateAPI(object):
         instrumental_intervals=_instrumental_intervals,
         modelled_types=_modelled_types,
         modelled_intervals=_modelled_intervals,
-        )
+    )
 
     BASE_URL = "http://climatedataapi.worldbank.org/climateweb/rest/"
 
@@ -357,7 +358,7 @@ class ClimateAPI(object):
                 loc_type = "country"
 
             data_url = "v1/{0}/cru/{1}/{2}/{3}".format(loc_type, data_type,
-                interval, str(loc))
+                                                       interval, str(loc))
             full_url = "".join([self.BASE_URL, data_url])
             urls.append((loc, full_url))
 
@@ -368,11 +369,11 @@ class ClimateAPI(object):
             api_calls.append(dict(
                 url=url,
                 resp=resp,
-                ))
+            ))
 
         call_date = datetime.datetime.now().date()
         return InstrumentalDataset(api_calls, data_interval=interval,
-            data_type=data_type, call_date=call_date)
+                                   data_type=data_type, call_date=call_date)
 
     def get_modelled(self, data_type, interval, locations):
         """Get modelled data for precipitation or temperature.
@@ -404,7 +405,7 @@ class ClimateAPI(object):
         # have a different set of dates to GCM requests.
         if data_type in ["pr", "tas"]:
             all_urls = ["v1/{0}/{1}/{2}/{3}/{4}/{5}",
-                "v1/{0}/{1}/ensemble/{2}/{3}/{4}/{5}"]
+                        "v1/{0}/{1}/ensemble/{2}/{3}/{4}/{5}"]
             all_dates = self._valid_modelled_dates
         else:
             all_urls = ["v1/{0}/{1}/ensemble/{2}/{3}/{4}/{5}"]
@@ -423,15 +424,15 @@ class ClimateAPI(object):
                 start_date = dates[0]
                 end_date = dates[1]
                 rest_url = url.format(loc_type, interval, data_type,
-                    start_date, end_date, loc)
+                                      start_date, end_date, loc)
                 full_url = "".join([self.BASE_URL, rest_url])
 
                 resp = json.loads(self.fetch(full_url))
                 api_calls.append(dict(
                     url=full_url,
                     resp=resp,
-                    ))
+                ))
 
         call_date = datetime.datetime.now().date()
         return ModelledDataset(api_calls, data_interval=interval,
-            data_type=data_type, call_date=call_date)
+                               data_type=data_type, call_date=call_date)

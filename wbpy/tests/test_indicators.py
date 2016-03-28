@@ -1,76 +1,77 @@
-# -*- coding: utf-8 -*-
 import datetime
 import unittest
 
-from ddt import ddt, data
+import urllib.request
+from ddt import data
+from ddt import ddt
 
 import wbpy
 from wbpy.tests.indicator_data import Yearly, Monthly, Quarterly
 
+
 @ddt
 class TestIndicatorDatasetBasicAttrs(unittest.TestCase):
 
-        @data(Yearly())
-        def test_repr_fn(self, data):
-            self.assertIn(data.indicator["id"], repr(data.dataset))
-            self.assertIn(data.indicator["name"], repr(data.dataset))
+    @data(Yearly())
+    def test_repr_fn(self, data):
+        self.assertIn(data.indicator["id"], repr(data.dataset))
+        self.assertIn(data.indicator["name"], repr(data.dataset))
 
-        @data(Yearly())
-        def test_str_fn_doesnt_raise(self, data):
-            str(data.dataset)
+    @data(Yearly())
+    def test_str_fn_doesnt_raise(self, data):
+        str(data.dataset)
 
-        @data(Yearly())
-        def test_api_url_attr(self, data):
-            self.assertEqual(data.dataset.api_url, data.url)
+    @data(Yearly())
+    def test_api_url_attr(self, data):
+        self.assertEqual(data.dataset.api_url, data.url)
 
-        @data(Yearly())
-        def test_api_call_date_attr(self, data):
-            self.assertEqual(data.dataset.api_call_date, data.date)
+    @data(Yearly())
+    def test_api_call_date_attr(self, data):
+        self.assertEqual(data.dataset.api_call_date, data.date)
 
-        @data(Yearly())
-        def test_api_response_attr(self, data):
-            self.assertEqual(data.dataset.api_response, data.response)
+    @data(Yearly())
+    def test_api_response_attr(self, data):
+        self.assertEqual(data.dataset.api_response, data.response)
 
-        @data(Yearly())
-        def test_countries_attr(self, data):
-            for row in data.response[1]:
-                country = row["country"]
-                self.assertEqual(data.dataset.countries[country["id"]],
-                    country["value"])
+    @data(Yearly())
+    def test_countries_attr(self, data):
+        for row in data.response[1]:
+            country = row["country"]
+            self.assertEqual(data.dataset.countries[country["id"]],
+                             country["value"])
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_indicator_code_attr(self, data):
-            self.assertEqual(data.dataset.indicator_code,
-                data.response[1][0]["indicator"]["id"])
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_indicator_code_attr(self, data):
+        self.assertEqual(data.dataset.indicator_code,
+                         data.response[1][0]["indicator"]["id"])
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_indicator_name_attr(self, data):
-            self.assertEqual(data.dataset.indicator_name,
-                data.response[1][0]["indicator"]["value"])
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_indicator_name_attr(self, data):
+        self.assertEqual(data.dataset.indicator_name,
+                         data.response[1][0]["indicator"]["value"])
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_indicator_source_attr(self, data):
-            self.assertEqual(data.dataset.indicator_source,
-                data.indicator["source"])
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_indicator_source_attr(self, data):
+        self.assertEqual(data.dataset.indicator_source,
+                         data.indicator["source"])
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_indicator_source_note_attr(self, data):
-            self.assertEqual(data.dataset.indicator_source_note,
-                data.indicator["sourceNote"])
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_indicator_source_note_attr(self, data):
+        self.assertEqual(data.dataset.indicator_source_note,
+                         data.indicator["sourceNote"])
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_indicator_source_org_attr(self, data):
-            # Strip whitespace to avoid comparison issues
-            expected = "".join(data.indicator["sourceOrganization"].split())
-            result = "".join(data.dataset.indicator_source_org.split())
-            self.assertEqual(result, expected)
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_indicator_source_org_attr(self, data):
+        # Strip whitespace to avoid comparison issues
+        expected = "".join(data.indicator["sourceOrganization"].split())
+        result = "".join(data.dataset.indicator_source_org.split())
+        self.assertEqual(result, expected)
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_indicator_topics_attr(self, data):
-            expected = data.indicator["topics"]
-            result = data.dataset.indicator_topics
-            self.assertEqual(result, expected)
-
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_indicator_topics_attr(self, data):
+        expected = data.indicator["topics"]
+        result = data.dataset.indicator_topics
+        self.assertEqual(result, expected)
 
 
 @ddt
@@ -103,71 +104,75 @@ class TestIndicatorDatasetDataDatesFn(unittest.TestCase):
 @ddt
 class TestIndicatorDatasetDictFn(unittest.TestCase):
 
-        @data(Yearly(), Monthly(), Quarterly())
-        def test_country_keys(self, data):
-            resp = data.response[1]
-            expected = sorted(list(set([row["country"]["id"] for row in resp])))
-            self.assertEqual(sorted(data.dataset.as_dict().keys()),
-                expected)
+    @data(Yearly(), Monthly(), Quarterly())
+    def test_country_keys(self, data):
+        resp = data.response[1]
+        expected = sorted(list(set([row["country"]["id"] for row in resp])))
+        self.assertEqual(sorted(data.dataset.as_dict().keys()),
+                         expected)
 
-        def test_yearly_keys(self):
-            data = Yearly()
-            for country_data in data.dataset.as_dict().values():
-                self.assertEqual(sorted(country_data.keys()),
-                    ["2011", "2012"])
+    def test_yearly_keys(self):
+        data = Yearly()
+        for country_data in data.dataset.as_dict().values():
+            self.assertEqual(sorted(country_data.keys()),
+                             ["2011", "2012"])
 
-        def test_monthly_keys(self):
-            data = Monthly()
-            first_country = next(iter(data.dataset.as_dict().values()))
-            self.assertIn("2013M07", first_country.keys())
+    def test_monthly_keys(self):
+        data = Monthly()
+        first_country = next(iter(data.dataset.as_dict().values()))
+        self.assertIn("2013M07", first_country.keys())
 
-        def test_quarterly_keys(self):
-            data = Quarterly()
-            first_country = next(iter(data.dataset.as_dict().values()))
-            self.assertIn("2013Q2", first_country.keys())
+    def test_quarterly_keys(self):
+        data = Quarterly()
+        first_country = next(iter(data.dataset.as_dict().values()))
+        self.assertIn("2013Q2", first_country.keys())
 
-        def test_yearly_datetime_param(self):
-            data = Yearly()
-            results = data.dataset.as_dict(use_datetime=True).values()
-            for country_data in results:
-                self.assertEqual(sorted(country_data.keys()),
-                    [datetime.date(2011, 1, 1), datetime.date(2012, 1, 1)])
+    def test_yearly_datetime_param(self):
+        data = Yearly()
+        results = data.dataset.as_dict(use_datetime=True).values()
+        for country_data in results:
+            self.assertEqual(
+                sorted(country_data.keys()),
+                [datetime.date(2011, 1, 1), datetime.date(2012, 1, 1)]
+            )
 
-        def test_monthly_datetime_param(self):
-            data = Monthly()
-            results = data.dataset.as_dict(use_datetime=True).values()
-            first_country = next(iter(data.dataset.as_dict().values()))
-            self.assertIn("2013M08", first_country.keys())
+    def test_monthly_datetime_param(self):
+        data = Monthly()
+        first_country = next(iter(
+            data.dataset.as_dict(use_datetime=True).values()))
+        self.assertIn(datetime.date(2013, 8, 1), first_country.keys())
 
-        def test_quarterly_datetime_param(self):
-            data = Quarterly()
-            results = data.dataset.as_dict(use_datetime=True).values()
-            first_country = next(iter(data.dataset.as_dict().values()))
-            self.assertIn("2013Q2", first_country.keys())
+    def test_quarterly_datetime_param(self):
+        data = Quarterly()
+        first_country = next(iter(
+            data.dataset.as_dict(use_datetime=True).values()))
+        self.assertIn(datetime.date(2013, 4, 1), first_country.keys())
 
-        def test_yearly_values(self):
-            data = Yearly()
-            self.assertEqual(data.dataset.as_dict()["AR"]["2011"], 40728738)
-            self.assertEqual(data.dataset.as_dict()["GB"]["2012"], 63227526)
-            self.assertEqual(data.dataset.as_dict()["HK"]["2012"], 7154600)
+    def test_yearly_values(self):
+        data = Yearly()
+        self.assertEqual(data.dataset.as_dict()["AR"]["2011"], 40728738)
+        self.assertEqual(data.dataset.as_dict()["GB"]["2012"], 63227526)
+        self.assertEqual(data.dataset.as_dict()["HK"]["2012"], 7154600)
 
-        def test_monthly_values(self):
-            data = Monthly()
-            self.assertEqual(data.dataset.as_dict()["IN"]["2013M04"],
-                54.38226363636)
+    def test_monthly_values(self):
+        data = Monthly()
+        self.assertEqual(data.dataset.as_dict()["IN"]["2013M04"],
+                         54.38226363636)
 
-        def test_quarterly_values(self):
-            data = Quarterly()
-            self.assertEqual(data.dataset.as_dict()["ES"]["2012Q4"],
-                100.18916509029)
+    def test_quarterly_values(self):
+        data = Quarterly()
+        self.assertEqual(data.dataset.as_dict()["ES"]["2012Q4"],
+                         100.18916509029)
 
 
 class TestIndicatorAPI(unittest.TestCase):
+
     def setUp(self):
         self.api = wbpy.IndicatorAPI()
 
 
 class TestTopics(TestIndicatorAPI):
+
     def test_returns_topics(self):
         data = self.api.get_topics()
         topic = list(data.values())[1]
@@ -176,6 +181,7 @@ class TestTopics(TestIndicatorAPI):
 
 
 class TestSources(TestIndicatorAPI):
+
     def test_returns_sources(self):
         data = self.api.get_sources()
         source = list(data.values())[1]
@@ -183,6 +189,7 @@ class TestSources(TestIndicatorAPI):
 
 
 class TestCountries(TestIndicatorAPI):
+
     def test_returns_countries(self):
         test_keys = ['GB', 'AF', 'FR', 'IT', 'BR']
         data = self.api.get_countries(test_keys)
@@ -211,6 +218,7 @@ class TestCountries(TestIndicatorAPI):
 
 
 class TestIncome(TestIndicatorAPI):
+
     def test_returns_income_levels(self):
         test_keys = ['LMC', 'UMC']
         data = self.api.get_income_levels(test_keys)
@@ -218,12 +226,15 @@ class TestIncome(TestIndicatorAPI):
 
 
 class TestRegions(TestIndicatorAPI):
+
     def test_returns_regions(self):
         data = self.api.get_regions(search="Latin")
-        self.assertTrue(all(['latin' in v['name'].lower() for v in data.values()]))
+        self.assertTrue(all(['latin' in v['name'].lower()
+                             for v in data.values()]))
 
 
 class TestIndicators(TestIndicatorAPI):
+
     def test_returns_indicators(self):
         data = self.api.get_indicators()
         self.assertTrue(len(data) > 7500)
@@ -258,6 +269,7 @@ class TestIndicators(TestIndicatorAPI):
 
 @ddt
 class TestGetDatasetFn(TestIndicatorAPI):
+
     def test_get_dataset_returns_dataset(self):
         results = self.api.get_dataset("SP.POP.GROW")
         self.assertEqual(results.indicator_code, "SP.POP.GROW")
@@ -283,12 +295,12 @@ class TestGetDatasetFn(TestIndicatorAPI):
     def test_gapfill_kwarg(self, gapfill):
         countries = ["BR"]
         results = self.api.get_dataset("SP.POP.GROW", countries, mrv=5,
-            gapfill=gapfill)
+                                       gapfill=gapfill)
         self.assertEqual(len(results.dates()), 5)
 
     def test_frequency_kwarg(self):
         results = self.api.get_dataset("DPANUSSPF", date="2009:2010",
-                mrv="2", frequency="M")
+                                       mrv="2", frequency="M")
         self.assertIn("2010M12", results.dates())
 
     def test_banned_kwarg(self):
@@ -305,13 +317,15 @@ class TestGetDatasetFn(TestIndicatorAPI):
     def test_another_bad_request_raises_exception(self):
         # This one slipped through _raise_if_response_contains_error()
         def request_with_no_data():
-            results = self.api.get_dataset("DPANUSIFS", date="2009:2010",
-                mrv="2", frequency="M")
+            self.api.get_dataset("DPANUSIFS", date="2009:2010",
+                                 mrv="2", frequency="M")
         self.assertRaises(ValueError, request_with_no_data)
 
+
 class TestInit(TestIndicatorAPI):
+
     def test_can_pass_own_cache_object(self):
-        import urllib.request
+
         def test_fetch(url):
             return urllib.request.urlopen(url).read()
 
@@ -321,6 +335,7 @@ class TestInit(TestIndicatorAPI):
 
 @ddt
 class TestPrintCodes(TestIndicatorAPI):
+
     @data(
         "get_countries",
         "get_income_levels",
@@ -330,7 +345,7 @@ class TestPrintCodes(TestIndicatorAPI):
         "get_regions",
         "get_lending_types",
 
-        )
+    )
     def test_can_handle_all_api_funcs_without_error(self, fn_name):
         results = getattr(self.api, fn_name)()
         self.api.print_codes(results)
@@ -348,8 +363,10 @@ class TestPrintCodes(TestIndicatorAPI):
 
 
 class TestSearch(TestIndicatorAPI):
+
     def test_that_default_search_is_of_keys_and_not_values(self):
-        data = self.api.get_sources(search="11") # 11 is a key, and not in the value
+        # 11 is a key, and not in the value
+        data = self.api.get_sources(search="11")
 
         self.assertIn("11", data.keys())
         self.assertEqual(len(data), 1)
@@ -359,7 +376,7 @@ class TestSearch(TestIndicatorAPI):
         data = dict(
             foo="I hope this one will MATCH",
             bar="This one will not match, I hope",
-            )
+        )
 
         results = self.api.search_results("hope.+match", data)
         self.assertTrue("foo" in results.keys())
@@ -369,7 +386,7 @@ class TestSearch(TestIndicatorAPI):
         data = self.api.get_topics()
 
         results = self.api.search_results("poverty", data, key="value")
-        self.assertIn('11', results) # Code for Poverty topic
+        self.assertIn('11', results)  # Code for Poverty topic
         self.assertEqual(len(results.keys()), 1)
 
         results = self.api.search_results("poverty", data)
@@ -392,6 +409,7 @@ class TestSearch(TestIndicatorAPI):
 
 
 class TestCountryCodes(TestIndicatorAPI):
+
     def test_ISO_2_standard_codes_supported(self):
         codes = ["US", "AF"]
         data = self.api.get_countries(codes)
