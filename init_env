@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+SCRIPTPATH="$( cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P )"
+
+VENV=~/.venv3
+ACTIVATE="$VENV/bin/activate"
+
+if [ ! -f $ACTIVATE ]; then
+    virtualenv --python=python3 --system-site-packages $VENV
+    echo "export PYTHONPATH=${PYTHONPATH:-.}:$SCRIPTPATH" >> $ACTIVATE
+    . $ACTIVATE
+    pip install -r $SCRIPTPATH/requirements.txt
+fi
