@@ -156,8 +156,10 @@ class IndicatorAPI(object):
 
         """
         if country_codes:
-            country_codes = [utils.convert_country_code(c, "alpha3") for c in
-                             country_codes]
+            country_codes = [
+                utils.convert_country_code(code, "alpha3") for code in
+                country_codes
+            ]
             country_string = ";".join(country_codes)
         else:
             country_string = "all"
@@ -527,7 +529,7 @@ class IndicatorAPI(object):
             Add query values that are only relevant to the get_dataset() call.
 
         """
-        kwargs = dict([(k.lower(), v) for k, v in kwargs.items()])
+        kwargs = {k.lower(): v for k, v in kwargs.items()}
         assert not ("topic" in kwargs and "source" in kwargs)
 
         # Fix any API options that shouldn't be accessible via wbpy.
@@ -640,5 +642,5 @@ class IndicatorAPI(object):
         return filtered_data
 
     def _raise_if_bad_response(self, json_resp, url):
-        if json_resp[0].get("pages") == 0 or json_resp[0].get("message"):
+        if json_resp[0].get("message"):
             raise ValueError(utils.EXC_MSG % (url, json_resp))
