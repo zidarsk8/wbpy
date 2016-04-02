@@ -276,6 +276,43 @@ class IndicatorAPI(object):
             country_codes, search=search, search_full=search_full,
             **kwargs)
 
+    def get_country_list(self, **kwargs):
+        """Get a list of countries with normalized dict elements.
+
+        Returns:
+            List of dicts, where each dict contains country info in strings.
+        """
+        return [
+            {
+                "id": key,
+                "name": country["name"],
+                "income level": "{} ({})".format(
+                    country["incomeLevel"]["value"],
+                    country["incomeLevel"]["id"],
+                ),
+            }
+            for key, country in self.get_countries(**kwargs).items()
+        ]
+
+    def get_indicator_list(self, **kwargs):
+        """Get a list of indicators with normalized dict elements.
+
+        Returns:
+            List of dicts, where each dict contains country info in strings.
+        """
+        return [
+            {
+                "id": key,
+                "name": country["name"],
+                "source": "{} ({})".format(
+                    country["source"]["value"],
+                    country["source"]["id"],
+                ),
+            }
+            for key, country in self.get_indicators(**kwargs).items()
+        ]
+
+
     def get_income_levels(self, income_codes=None, search=None,
                           search_full=False, **kwargs):
         """Request income categories.
