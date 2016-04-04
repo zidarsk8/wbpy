@@ -315,11 +315,9 @@ class TestGetDatasetFn(TestIndicatorAPI):
         self.assertRaises(ValueError, bad_request)
 
     def test_another_bad_request_raises_exception(self):
-        # This one slipped through _raise_if_response_contains_error()
-        def request_with_no_data():
-            self.api.get_dataset("DPANUSIFS", date="2009:2010",
+        result = self.api.get_dataset("DPANUSIFS", date="2009:2010",
                                  mrv="2", frequency="M")
-        self.assertRaises(ValueError, request_with_no_data)
+        self.assertEquals(result.countries, {})
 
 
 class TestInit(TestIndicatorAPI):

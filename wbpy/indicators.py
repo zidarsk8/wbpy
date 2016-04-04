@@ -16,19 +16,21 @@ class IndicatorDataset(object):
 
         # The country codes and names
         self.countries = {}
-        for country_data in self.api_response[1]:
-            country_id = country_data["country"]["id"]
-            country_val = country_data["country"]["value"]
-            if country_id not in self.countries:
-                self.countries[country_id] = country_val
 
-        self.indicator_code = self.api_response[1][0]["indicator"]["id"]
-        self.indicator_name = self.api_response[1][0]["indicator"]["value"]
+        if self.api_response and self.api_response[1]:
+            for country_data in self.api_response[1]:
+                country_id = country_data["country"]["id"]
+                country_val = country_data["country"]["value"]
+                if country_id not in self.countries:
+                    self.countries[country_id] = country_val
 
-        # For some use cases, it's nice to have direct access to all the
-        # `get_indicator()` metadata (eg. the sources, full description).
-        # It won't always be wanted, so it's requested lazily.
-        self._indicator_response = None
+            self.indicator_code = self.api_response[1][0]["indicator"]["id"]
+            self.indicator_name = self.api_response[1][0]["indicator"]["value"]
+
+            # For some use cases, it's nice to have direct access to all the
+            # `get_indicator()` metadata (eg. the sources, full description).
+            # It won't always be wanted, so it's requested lazily.
+            self._indicator_response = None
 
     def __repr__(self):
         s = "<%s.%s(%r, %r) with id: %r>"
