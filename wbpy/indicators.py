@@ -21,8 +21,7 @@ class IndicatorDataset(object):
             for country_data in self.api_response[1]:
                 country_id = country_data["country"]["id"]
                 country_val = country_data["country"]["value"]
-                if country_id not in self.countries:
-                    self.countries[country_id] = country_val
+                self.countries[country_id] = country_val
 
             self.indicator_code = self.api_response[1][0]["indicator"]["id"]
             self.indicator_name = self.api_response[1][0]["indicator"]["value"]
@@ -224,17 +223,10 @@ class IndicatorAPI(object):
             page = self.fetch("http://data.worldbank.org/indicator/all")
             ind_codes = re.compile("(?<=http://data.worldbank.org/indicator/)"
                                    "[A-Za-z0-9\.]+(?=\">)")
-            common_matches = {}
-            code_matches = set([code.lower() for code in
-                                ind_codes.findall(page)])
+            codes = set(code.lower() for code in
+                        ind_codes.findall(page))
             # If key matches common code, include in results.
-            for k, v in results.items():
-                low_k = k.lower()
-                for code_match in code_matches:
-                    if code_match in low_k:
-                        common_matches[k] = v
-                        break
-            return common_matches
+            return {k: v for k, v in results.items() if k.lower() in codes}
         else:
             return results
 
