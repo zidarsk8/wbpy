@@ -7,7 +7,6 @@ import logging
 import datetime
 import hashlib
 import json
-import sys
 
 import pycountry  # For ISO 1366 code conversions
 
@@ -58,9 +57,7 @@ def fetch(url, use_cache=True):
     logger.debug("Getting web response...")
     response = urllib.request.urlopen(url).read()
 
-    # py3 returns bytestring
-    if sys.version_info >= (3,):
-        response = response.decode("utf-8")
+    response = response.decode("utf-8")
 
     logger.debug("Response received.")
     logger.debug("Caching response... ")
