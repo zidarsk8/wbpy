@@ -14,6 +14,7 @@ import pycountry  # For ISO 1366 code conversions
 logger = logging.getLogger(__name__)
 
 EXC_MSG = "The URL %s returned a bad response: %s"
+CACHE_TIME = 60 * 60 * 24 * 31  # one month in seconds
 
 # The Indicators API (but not Climate API) uses a few non-ISO 2-digit and
 # 3-digit codes, for either regions or groups of regions. Make them accessible
@@ -26,7 +27,7 @@ JSON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 NON_STANDARD_REGIONS = json.loads(open(JSON_PATH).read())
 
 
-def fetch(url, check_cache=True, cache_response=True):
+def fetch(url, use_cache=True):
     """Return response from a URL, and cache results for one day."""
     # Use system tempfile for cache path.
     cache_dir = os.path.join(tempfile.gettempdir(), "wbpy")
@@ -41,11 +42,10 @@ def fetch(url, check_cache=True, cache_response=True):
     cache_path = os.path.join(cache_dir, url_hash)
 
     # If the cache file is < one day old, return cache, else get new response.
-    if check_cache:
+    if use_cache:
         if os.path.exists(cache_path):
             logger.debug("URL found in cache...")
-            secs_in_day = 86400
-            if int(time.time()) - os.path.getmtime(cache_path) < secs_in_day:
+            if int(time.time()) - os.path.getmtime(cache_path) < CACHE_TIME:
                 logger.debug("Retrieving response from cache.")
                 with open(cache_path, "rb") as cache_file:
                     return cache_file.read().decode("utf-8")
@@ -63,9 +63,8 @@ def fetch(url, check_cache=True, cache_response=True):
         response = response.decode("utf-8")
 
     logger.debug("Response received.")
-    if cache_response:
-        logger.debug("Caching response... ")
-        _cache_response(response, url, cache_path)
+    logger.debug("Caching response... ")
+    _cache_response(response, url, cache_path)
     return response
 
 
