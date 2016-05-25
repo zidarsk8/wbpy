@@ -63,7 +63,7 @@ class InstrumentalDataset(ClimateDataset):
         super(InstrumentalDataset, self).__init__(*args, **kwargs)
 
         dt = self._data_type_arg
-        self.data_type = {dt: ClimateAPI._instrumental_types[dt]}
+        self.data_type = {dt: ClimateAPI.INSTRUMENTAL_TYPES[dt]}
         self.interval = self._interval_arg
 
         self.dates = "data.worldbank.org/developers/climate-data-api: "\
@@ -114,15 +114,15 @@ class ModelledDataset(ClimateDataset):
         super(ModelledDataset, self).__init__(*args, **kwargs)
 
         dt = self._data_type_arg
-        self.data_type = {dt: ClimateAPI._modelled_types[dt]}
+        self.data_type = {dt: ClimateAPI.MODELLED_TYPES[dt]}
 
         intv = self._interval_arg
-        self.interval = {intv: ClimateAPI._modelled_intervals[intv]}
+        self.interval = {intv: ClimateAPI.MODELLED_INTERVALS[intv]}
 
         self.gcms = {}
         for gcm_key in self.as_dict():
-            if gcm_key in ClimateAPI._gcm:
-                self.gcms[gcm_key] = ClimateAPI._gcm[gcm_key]
+            if gcm_key in ClimateAPI.GCM:
+                self.gcms[gcm_key] = ClimateAPI.GCM[gcm_key]
 
         all_sres = set()
         for call in self.api_calls:
@@ -219,7 +219,7 @@ class ClimateAPI(object):
     ``fetch``, which requests a URL and returns the response as a string.
     """
 
-    _gcm = dict(
+    GCM = dict(
         bccr_bcm2_0="BCM 2.0",
         csiro_mk3_5="CSIRO Mark 3.5",
         ingv_echam4="ECHAM 4.6",
@@ -241,7 +241,7 @@ class ClimateAPI(object):
         ensemble_90="90th percentile values of all models together",
     )
 
-    _valid_modelled_dates = [
+    MODELED_DATES = [
         (1920, 1939),
         (1940, 1959),
         (1960, 1979),
@@ -252,21 +252,25 @@ class ClimateAPI(object):
         (2080, 2099),
     ]
 
-    _valid_stat_dates = [
+    STAT_DATES = [
         (1961, 2000),
         (2046, 2065),
         (2081, 2100),
     ]
 
-    _instrumental_types = dict(
+    INSTRUMENTAL_TYPES = dict(
         pr="Precipitation (rainfall and assumed water equivalent), in "
         "millimeters",
         tas="Temperature, in degrees Celsius",
     )
 
-    _instrumental_intervals = ["year", "month", "decade"]
+    INSTRUMENTAL_INTERVALS = [
+        "year",
+        "month",
+        "decade",
+    ]
 
-    _modelled_types = dict(
+    MODELLED_TYPES = dict(
         tmin_means="Average daily minimum temperature, Celsius",
         tmax_means="Average daily maximum temperature, Celsius",
         tmax_days90th="Number of days with max temperature above the "
@@ -287,11 +291,11 @@ class ClimateAPI(object):
         ppt_dryspell="Average number of days between precipitation "
         "events",
         ppt_means="Average daily precipitation",
-        pr=_instrumental_types["pr"],
-        tas=_instrumental_types["tas"],
+        pr=INSTRUMENTAL_TYPES["pr"],
+        tas=INSTRUMENTAL_TYPES["tas"],
     )
 
-    _modelled_intervals = dict(
+    MODELLED_INTERVALS = dict(
         mavg="Monthly average",
         annualavg="Annual average",
         manom="Average monthly change (anomaly).",
@@ -304,17 +308,17 @@ class ClimateAPI(object):
         aavg="annualavg",
     )
     for _k, _d_key in _shorthand_codes.items():
-        for _d in [_instrumental_types, _modelled_types,
-                   _instrumental_intervals, _modelled_intervals]:
+        for _d in [INSTRUMENTAL_TYPES, MODELLED_TYPES,
+                   INSTRUMENTAL_INTERVALS, MODELLED_INTERVALS]:
             if _d_key in _d:
                 _d[_k] = _d[_d_key]
 
     # Make them accessible via single attr
     ARG_DEFINITIONS = dict(
-        instrumental_types=_instrumental_types,
-        instrumental_intervals=_instrumental_intervals,
-        modelled_types=_modelled_types,
-        modelled_intervals=_modelled_intervals,
+        instrumental_types=INSTRUMENTAL_TYPES,
+        instrumental_intervals=INSTRUMENTAL_INTERVALS,
+        modelled_types=MODELLED_TYPES,
+        modelled_intervals=MODELLED_INTERVALS,
     )
 
     BASE_URL = "http://climatedataapi.worldbank.org/climateweb/rest/"
@@ -341,8 +345,6 @@ class ClimateAPI(object):
             country codes, or basin ID numbers.
 
         """
-        data_type = self._clean_api_code(data_type)
-        interval = self._clean_api_code(interval)
 
         assert data_type in self.ARG_DEFINITIONS["instrumental_types"]
         assert interval in self.ARG_DEFINITIONS["instrumental_intervals"]
@@ -391,8 +393,6 @@ class ClimateAPI(object):
             country codes, or basin ID numbers.
 
         """
-        data_type = self._clean_api_code(data_type)
-        interval = self._clean_api_code(interval)
 
         assert data_type in self.ARG_DEFINITIONS["modelled_types"]
         assert interval in self.ARG_DEFINITIONS["modelled_intervals"]
@@ -406,10 +406,10 @@ class ClimateAPI(object):
         if data_type in ["pr", "tas"]:
             all_urls = ["v1/{0}/{1}/{2}/{3}/{4}/{5}",
                         "v1/{0}/{1}/ensemble/{2}/{3}/{4}/{5}"]
-            all_dates = self._valid_modelled_dates
+            all_dates = self.MODELED_DATES
         else:
             all_urls = ["v1/{0}/{1}/ensemble/{2}/{3}/{4}/{5}"]
-            all_dates = self._valid_stat_dates
+            all_dates = self.STAT_DATES
 
         api_calls = []
         for loc in locations:
