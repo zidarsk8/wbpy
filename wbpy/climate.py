@@ -303,16 +303,6 @@ class ClimateAPI(object):
     )
 
     # Convenience codes
-    _shorthand_codes = dict(
-        aanom="annualanom",
-        aavg="annualavg",
-    )
-    for _k, _d_key in _shorthand_codes.items():
-        for _d in [INSTRUMENTAL_TYPES, MODELLED_TYPES,
-                   INSTRUMENTAL_INTERVALS, MODELLED_INTERVALS]:
-            if _d_key in _d:
-                _d[_k] = _d[_d_key]
-
     # Make them accessible via single attr
     ARG_DEFINITIONS = dict(
         instrumental_types=INSTRUMENTAL_TYPES,
@@ -325,11 +315,6 @@ class ClimateAPI(object):
 
     def __init__(self, fetch=None):
         self.fetch = fetch if fetch else utils.fetch
-
-    @staticmethod
-    def _clean_api_code(code):
-        code = code.lower()
-        return ClimateAPI._shorthand_codes.get(code, code)
 
     def get_instrumental(self, data_type, interval, locations):
         """Get historical data for temperature or precipitation.
