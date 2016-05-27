@@ -3,6 +3,7 @@ import datetime
 import pprint
 import urllib
 import json
+from collections import defaultdict
 
 from wbpy import utils
 
@@ -14,17 +15,6 @@ class IndicatorDataset(object):
         self.api_call_date = date_of_call
         self.api_response = json_resp
 
-        # The country codes and names
-        self.countries = {}
-        for country_data in self.api_response[1]:
-            country_id = country_data["country"]["id"]
-            country_val = country_data["country"]["value"]
-            if country_id not in self.countries:
-                self.countries[country_id] = country_val
-
-        self.indicator_code = self.api_response[1][0]["indicator"]["id"]
-        self.indicator_name = self.api_response[1][0]["indicator"]["value"]
-
         # For some use cases, it's nice to have direct access to all the
         # `get_indicator()` metadata (eg. the sources, full description).
         # It won't always be wanted, so it's requested lazily.
@@ -35,8 +25,6 @@ class IndicatorDataset(object):
         return s % (
             self.__class__.__module__,
             self.__class__.__name__,
-            self.indicator_code,
-            self.indicator_name,
             id(self),
         )
 
@@ -115,6 +103,45 @@ class IndicatorDataset(object):
 
         return clean_dict
 
+    def _get_mappings_dict(self):
+        mapping_dict = defaultdict(lambda: defaultdict(float))
+        countries = set()
+        dates = set()
+        if len(self.api_response) > 1 and self.api_response[1]:
+            response_data = self.api_response[1]
+            for row in response_data:
+                country = row.get("country", {}).get("value", "N/")
+                date_ = row.get("date")
+                if not utils.worldbank_date_to_datetime(row.get("date")):
+                    continue
+                mapping_dict[country][date_] = row.get("value")
+                mapping_dict[date_][country] = row.get("value")
+                countries.add(country)
+                dates.add(date_)
+        return countries, dates, mapping_dict
+
+    def as_list(self, transpose=False, use_datetime=False):
+        countries, dates, mapping_dict = self._get_mappings_dict()
+
+        rows = sorted(dates)
+        columns = sorted(countries)
+        first_row = "Date"
+        if transpose:
+            rows, columns = columns, rows
+            first_row = "Country"
+
+        result_list = [[first_row] + columns]
+        for row in rows:
+            if not transpose and use_datetime:
+                list_row = [utils.worldbank_date_to_datetime(row)]
+            else:
+                list_row = [row]
+            for column in columns:
+                list_row.append(mapping_dict[row][column])
+            result_list.append(list_row)
+
+        return result_list
+
 
 class IndicatorAPI(object):
 
@@ -169,7 +196,6 @@ class IndicatorAPI(object):
         url = self._generate_indicators_url(url, dataset_params=True, **kwargs)
         call_date = datetime.datetime.now().date()
         json_resp = json.loads(self.fetch(url))
-        self._raise_if_bad_response(json_resp, url)
         return IndicatorDataset(json_resp, url, call_date)
 
     def get_indicators(self, indicator_codes=None, search=None,
@@ -311,7 +337,6 @@ class IndicatorAPI(object):
             }
             for key, country in self.get_indicators(**kwargs).items()
         ]
-
 
     def get_income_levels(self, income_codes=None, search=None,
                           search_full=False, **kwargs):
@@ -619,7 +644,6 @@ class IndicatorAPI(object):
         """
         web_page = self.fetch(url)
         json_resp = json.loads(web_page)
-        self._raise_if_bad_response(json_resp, url)
         header = json_resp[0]
         content = json_resp[1]
         current_page = header["page"]
@@ -677,7 +701,3 @@ class IndicatorAPI(object):
                 filtered_data = self.search_results(search, filtered_data,
                                                     func_params["search_key"])
         return filtered_data
-
-    def _raise_if_bad_response(self, json_resp, url):
-        if json_resp[0].get("message"):
-            raise ValueError(utils.EXC_MSG % (url, json_resp))
